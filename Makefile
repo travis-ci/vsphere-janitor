@@ -28,7 +28,8 @@ test: build .test
 
 .PHONY: clean
 clean:
-	$(FIND) pkg -name '*.a' | $(XARGS) rm -vf
+	$(FIND) pkg -wholename '*$(PACKAGE)*' | $(XARGS) rm -vf
+	$(RM) -v bin/*
 
 .PHONY: build
 build:
