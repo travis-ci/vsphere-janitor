@@ -13,6 +13,12 @@
 			"revision": "d375fa34084fb5703fbe4ee98e64108f3d2235ca",
 			"branch": "master",
 			"path": "/context"
+		},
+		{
+			"importpath": "github.com/codegangsta/cli",
+			"repository": "https://github.com/codegangsta/cli",
+			"revision": "7ad88c27405eca0bb4a04bb45897fb7985bd1217",
+			"branch": "master"
 		}
 	]
 }
