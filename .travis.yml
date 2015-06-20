@@ -1,0 +1,6 @@
+language: go
+go: 1.4.2
+install:
+- go get -x github.com/constabulary/gb/...
+script:
+- gb build -v

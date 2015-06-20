@@ -1,0 +1,18 @@
+{
+	"version": 0,
+	"dependencies": [
+		{
+			"importpath": "github.com/vmware/govmomi",
+			"repository": "https://github.com/vmware/govmomi",
+			"revision": "db50806964c43230e0f61a2cb9104c7bed497628",
+			"branch": "master"
+		},
+		{
+			"importpath": "golang.org/x/net/context",
+			"repository": "https://go.googlesource.com/net",
+			"revision": "d375fa34084fb5703fbe4ee98e64108f3d2235ca",
+			"branch": "master",
+			"path": "/context"
+		}
+	]
+}
