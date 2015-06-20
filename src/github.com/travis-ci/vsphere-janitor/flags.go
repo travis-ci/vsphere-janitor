@@ -13,10 +13,10 @@ var (
 			Usage:  "URL of the vsphere server, including '/sdk' if applicable",
 			EnvVar: "VSPHERE_JANITOR_VSPHERE_URL, VSPHERE_URL",
 		},
-		cli.StringFlag{
-			Name:   "p, vsphere-vm-path",
-			Usage:  "**REQUIRED**: Path in inventory that contains VMs for cleanup",
-			EnvVar: "VSPHERE_JANITOR_VSPHERE_VM_PATH, VSPHERE_VM_PATH",
+		cli.StringSliceFlag{
+			Name:   "p, vsphere-vm-paths",
+			Usage:  "**REQUIRED**: Paths in inventory that contain VMs for cleanup",
+			EnvVar: "VSPHERE_JANITOR_VSPHERE_VM_PATHS, VSPHERE_VM_PATHS",
 		},
 		cli.BoolFlag{
 			Name:   "S, skip-destroy",
@@ -33,6 +33,17 @@ var (
 			Name:   "c, concurrency",
 			Usage:  "Concurrent cleanup goroutine count",
 			EnvVar: "VSPHERE_JANITOR_CONCURRENCY, CONCURRENCY",
+		},
+		cli.BoolFlag{
+			Name:   "O, once",
+			Usage:  "Only run one cleanup",
+			EnvVar: "VSPHERE_JANITOR_ONCE, ONCE",
+		},
+		cli.DurationFlag{
+			Name:   "s, cleanup-loop-sleep",
+			Value:  1 * time.Minute,
+			Usage:  "Sleep interval between cleaning up all paths",
+			EnvVar: "VSPHERE_JANITOR_CLEANUP_LOOP_SLEEP, CLEANUP_LOOP_SLEEP",
 		},
 	}
 )
