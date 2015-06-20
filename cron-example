@@ -1,0 +1,18 @@
+#!/bin/bash
+# Example cron script meant to be placed in, e.g.:
+# `/etc/cron.hourly/vmware-janitor` with configuration in
+# `/etc/default/vmware-janitor` as env vars.
+
+set -o errexit
+
+CRON_JOB=$(basename ${BASH_SOURCE[0]})
+
+VMWARE_JANITOR_USER='nobody'
+VMWARE_JANITOR_LOG_DIR='/var/log'
+
+if [ -f /etc/default/${CRON_JOB} ] ; then
+  . /etc/default/${CRON_JOB}
+fi
+
+sudo -E -u ${VMWARE_JANITOR_USER} \
+  vmware-janitor &>> ${VMWARE_JANITOR_LOG_DIR}/${CRON_JOB}.log
