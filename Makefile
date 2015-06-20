@@ -1,4 +1,4 @@
-PACKAGE := github.com/travis-ci/vmware-janitor
+PACKAGE := github.com/travis-ci/vsphere-janitor
 VERSION_VAR := $(PACKAGE).VersionString
 VERSION_VALUE ?= $(shell git describe --always --dirty --tags 2>/dev/null)
 REV_VAR := $(PACKAGE).RevisionString

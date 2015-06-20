@@ -1,4 +1,4 @@
-package vmwarejanitor
+package vspherejanitor
 
 import (
 	"log"
