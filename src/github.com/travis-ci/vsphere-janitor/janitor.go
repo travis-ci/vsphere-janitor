@@ -26,8 +26,9 @@ type Janitor struct {
 func NewJanitor(u *url.URL, opts *JanitorOpts) *Janitor {
 	if opts == nil {
 		opts = &JanitorOpts{
-			Cutoff:      2 * time.Hour,
-			Concurrency: 1,
+			Cutoff:        2 * time.Hour,
+			Concurrency:   1,
+			RatePerSecond: 5,
 		}
 	}
 
@@ -38,9 +39,10 @@ func NewJanitor(u *url.URL, opts *JanitorOpts) *Janitor {
 }
 
 type JanitorOpts struct {
-	Cutoff      time.Duration
-	SkipDestroy bool
-	Concurrency int
+	Cutoff        time.Duration
+	SkipDestroy   bool
+	Concurrency   int
+	RatePerSecond int
 }
 
 type JanitorStats struct {
@@ -53,6 +55,7 @@ func (j *Janitor) Cleanup(path string) error {
 	wg := sync.WaitGroup{}
 	stats := &JanitorStats{}
 	ctx := context.Background()
+	throttle := time.Tick(time.Second / time.Duration(j.opts.RatePerSecond))
 
 	client, err := govmomi.NewClient(ctx, j.u, true)
 	if err != nil {
@@ -83,6 +86,8 @@ func (j *Janitor) Cleanup(path string) error {
 	vmErrors := []error{}
 
 	for _, vmRef := range vms {
+		<-throttle
+
 		vm, ok := vmRef.(*object.VirtualMachine)
 		if !ok {
 			log.Printf("Skipping non-vm %T: %v", vmRef, vmRef)
@@ -97,7 +102,8 @@ func (j *Janitor) Cleanup(path string) error {
 	}
 
 	wg.Wait()
-	log.Printf("finished powered_off=%v destroyed=%v", stats.NPoweredOff, stats.NDestroyed)
+	log.Printf("finished powered_off=%v destroyed=%v errors=%v",
+		stats.NPoweredOff, stats.NDestroyed, len(vmErrors))
 	return nil
 }
 
@@ -136,12 +142,15 @@ func (j *Janitor) handleVM(vm *object.VirtualMachine, stats *JanitorStats,
 	}
 
 	bootedAgo := time.Now().UTC().Sub(*mvm.Summary.Runtime.BootTime)
-	log.Printf("%v booted_ago=%v", vmName, bootedAgo)
+	log.Printf("instance booted_ago=%v %v", bootedAgo, vmName)
 
 	uptime := time.Duration(mvm.Summary.QuickStats.UptimeSeconds) * time.Second
 
-	if uptime < j.opts.Cutoff && mvm.Summary.Runtime.PowerState != types.VirtualMachinePowerStatePoweredOff {
-		log.Printf("skipping instance %v uptime=%v power_state=%v", vmName, uptime, mvm.Summary.Runtime.PowerState)
+	if uptime < j.opts.Cutoff &&
+		mvm.Summary.Runtime.PowerState != types.VirtualMachinePowerStatePoweredOff {
+
+		log.Printf("skipping instance %v uptime=%v power_state=%v",
+			vmName, uptime, mvm.Summary.Runtime.PowerState)
 		return nil
 	}
 

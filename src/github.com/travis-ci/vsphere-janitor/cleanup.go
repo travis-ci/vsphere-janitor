@@ -22,11 +22,14 @@ func RunCleanup(c *cli.Context) {
 	skipDestroy := c.Bool("skip-destroy")
 	cutoffDuration := c.Duration("cutoff")
 	concurrency := c.Int("concurrency")
+	ratePerSecond := c.Int("rate-per-second")
+	cleanupLoopSleep := c.Duration("cleanup-loop-sleep")
 
 	janitor := NewJanitor(u, &JanitorOpts{
-		Cutoff:      cutoffDuration,
-		SkipDestroy: skipDestroy,
-		Concurrency: concurrency,
+		Cutoff:        cutoffDuration,
+		SkipDestroy:   skipDestroy,
+		Concurrency:   concurrency,
+		RatePerSecond: ratePerSecond,
 	})
 
 	for {
@@ -35,9 +38,11 @@ func RunCleanup(c *cli.Context) {
 		}
 
 		if c.Bool("once") {
+			log.Printf("finishing after one run")
 			return
 		}
 
-		time.Sleep(c.Duration("cleanup-loop-sleep"))
+		log.Printf("sleeping %s", cleanupLoopSleep)
+		time.Sleep(cleanupLoopSleep)
 	}
 }
