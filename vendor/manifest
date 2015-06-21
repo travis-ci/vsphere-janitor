@@ -19,6 +19,12 @@
 			"repository": "https://github.com/codegangsta/cli",
 			"revision": "7ad88c27405eca0bb4a04bb45897fb7985bd1217",
 			"branch": "master"
+		},
+		{
+			"importpath": "github.com/rcrowley/go-metrics",
+			"repository": "https://github.com/rcrowley/go-metrics",
+			"revision": "a5cfc242a56ba7fa70b785f678d6214837bf93b9",
+			"branch": "master"
 		}
 	]
 }

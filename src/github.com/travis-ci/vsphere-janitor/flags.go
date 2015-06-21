@@ -51,5 +51,25 @@ var (
 			Usage:  "Rate limit max vms handled per second",
 			EnvVar: "VSPHERE_JANITOR_RATE_PER_SECOND,RATE_PER_SECOND",
 		},
+		cli.StringFlag{
+			Name:   "librato-email",
+			Usage:  "Librato metrics account email",
+			EnvVar: "VSPHERE_JANITOR_LIBRATO_EMAIL,LIBRATO_EMAIL",
+		},
+		cli.StringFlag{
+			Name:   "librato-token",
+			Usage:  "Librato metrics account token",
+			EnvVar: "VSPHERE_JANITOR_LIBRATO_TOKEN,LIBRATO_TOKEN",
+		},
+		cli.StringFlag{
+			Name:   "librato-source",
+			Usage:  "Librato metrics source name",
+			EnvVar: "VSPHERE_JANITOR_LIBRATO_SOURCE,LIBRATO_SOURCE",
+		},
+		cli.BoolFlag{
+			Name:   "silence-metrics",
+			Usage:  "Disable logging metrics to stderr",
+			EnvVar: "VSPHERE_JANITOR_SILENCE_METRICS,SILENCE_METRICS",
+		},
 	}
 )

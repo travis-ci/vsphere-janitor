@@ -5,8 +5,10 @@ import (
 	"log"
 	"net/url"
 	"sync"
+	"sync/atomic"
 	"time"
 
+	"github.com/rcrowley/go-metrics"
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/object"
 	"github.com/vmware/govmomi/vim25/mo"
@@ -45,15 +47,9 @@ type JanitorOpts struct {
 	RatePerSecond int
 }
 
-type JanitorStats struct {
-	NPoweredOff int
-	NDestroyed  int
-}
-
 func (j *Janitor) Cleanup(path string) error {
 	sem := make(chan struct{}, j.opts.Concurrency)
 	wg := sync.WaitGroup{}
-	stats := &JanitorStats{}
 	ctx := context.Background()
 	throttle := time.Tick(time.Second / time.Duration(j.opts.RatePerSecond))
 
@@ -84,6 +80,7 @@ func (j *Janitor) Cleanup(path string) error {
 	}
 
 	vmErrors := []error{}
+	totalVMs := int64(0)
 
 	for _, vmRef := range vms {
 		<-throttle
@@ -94,7 +91,9 @@ func (j *Janitor) Cleanup(path string) error {
 			continue
 		}
 
-		err := j.handleVM(vm, stats, ctx, wg, sem)
+		totalVMs = atomic.AddInt64(&totalVMs, int64(1))
+
+		err := j.handleVM(vm, ctx, wg, sem)
 		if err != nil {
 			vmErrors = append(vmErrors, err)
 			log.Printf("Error handling vm: %v", err)
@@ -102,12 +101,12 @@ func (j *Janitor) Cleanup(path string) error {
 	}
 
 	wg.Wait()
-	log.Printf("finished powered_off=%v destroyed=%v errors=%v",
-		stats.NPoweredOff, stats.NDestroyed, len(vmErrors))
+
+	metrics.GetOrRegisterGauge("vsphere.janitor.cleanup.vms.total", metrics.DefaultRegistry).Update(totalVMs)
 	return nil
 }
 
-func (j *Janitor) handleVM(vm *object.VirtualMachine, stats *JanitorStats,
+func (j *Janitor) handleVM(vm *object.VirtualMachine,
 	ctx context.Context, wg sync.WaitGroup, sem chan (struct{})) (panicErr error) {
 
 	mvm := &mo.VirtualMachine{}
@@ -183,7 +182,7 @@ func (j *Janitor) handleVM(vm *object.VirtualMachine, stats *JanitorStats,
 				return
 			}
 
-			stats.NPoweredOff++
+			metrics.GetOrRegisterMeter("vsphere.janitor.cleanup.vms.poweroff", metrics.DefaultRegistry).Mark(1)
 		}
 
 		if j.opts.SkipDestroy {
@@ -206,7 +205,7 @@ func (j *Janitor) handleVM(vm *object.VirtualMachine, stats *JanitorStats,
 		}
 
 		log.Printf("destroyed instance %s", vmName)
-		stats.NDestroyed++
+		metrics.GetOrRegisterMeter("vsphere.janitor.cleanup.vms.destroy", metrics.DefaultRegistry).Mark(1)
 	}()
 	return nil
 }

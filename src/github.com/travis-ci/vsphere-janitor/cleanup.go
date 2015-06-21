@@ -3,9 +3,12 @@ package vspherejanitor
 import (
 	"log"
 	"net/url"
+	"os"
 	"time"
 
 	"github.com/codegangsta/cli"
+	"github.com/rcrowley/go-metrics"
+	"github.com/rcrowley/go-metrics/librato"
 )
 
 func RunCleanup(c *cli.Context) {
@@ -31,6 +34,19 @@ func RunCleanup(c *cli.Context) {
 		Concurrency:   concurrency,
 		RatePerSecond: ratePerSecond,
 	})
+
+	if c.String("librato-email") != "" && c.String("librato-token") != "" && c.String("librato-source") != "" {
+		log.Printf("starting librato metrics reporter")
+
+		go librato.Librato(metrics.DefaultRegistry, time.Minute,
+			c.String("librato-email"), c.String("librato-token"), c.String("librato-source"),
+			[]float64{0.95}, time.Millisecond)
+
+		if !c.Bool("silence-metrics") {
+			go metrics.Log(metrics.DefaultRegistry, time.Minute,
+				log.New(os.Stderr, "metrics: ", log.Lmicroseconds))
+		}
+	}
 
 	for {
 		for _, path := range paths {
