@@ -6,7 +6,6 @@ A little tool used for cleaning up leftover ("stale") VMs in vSphere.
 
 Example configuration is available in the [example.env file](./example.env).
 
-## running via cron
+## running via upstart
 
-Check out the [example script](./cron-example) meant to be run via `cron` with
-env var configuration from `/etc/default/{name-of-cron-script}`.
+Check out the [example upstart conf](./upstart-example.conf).
