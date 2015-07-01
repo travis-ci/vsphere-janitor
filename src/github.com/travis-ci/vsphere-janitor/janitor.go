@@ -28,9 +28,11 @@ type Janitor struct {
 func NewJanitor(u *url.URL, opts *JanitorOpts) *Janitor {
 	if opts == nil {
 		opts = &JanitorOpts{
-			Cutoff:        2 * time.Hour,
-			Concurrency:   1,
-			RatePerSecond: 5,
+			Cutoff:         2 * time.Hour,
+			Concurrency:    1,
+			RatePerSecond:  5,
+			SkipZeroUptime: true,
+			SkipNoBootTime: true,
 		}
 	}
 
@@ -41,10 +43,12 @@ func NewJanitor(u *url.URL, opts *JanitorOpts) *Janitor {
 }
 
 type JanitorOpts struct {
-	Cutoff        time.Duration
-	SkipDestroy   bool
-	Concurrency   int
-	RatePerSecond int
+	Cutoff         time.Duration
+	SkipDestroy    bool
+	Concurrency    int
+	RatePerSecond  int
+	SkipZeroUptime bool
+	SkipNoBootTime bool
 }
 
 func (j *Janitor) Cleanup(path string) error {
@@ -130,22 +134,29 @@ func (j *Janitor) handleVM(vm *object.VirtualMachine,
 		}
 	}()
 
-	if mvm.Summary.QuickStats.UptimeSeconds == 0 && mvm.Summary.Runtime.BootTime == nil {
+	uptimeSecs := mvm.Summary.QuickStats.UptimeSeconds
+
+	if j.opts.SkipZeroUptime && uptimeSecs == 0 && mvm.Summary.Runtime.BootTime == nil {
 		log.Printf("instance has 0 uptime, skipping %v", vmName)
 		return nil
 	}
 
-	if mvm.Summary.Runtime.BootTime == nil {
+	bootTime := mvm.Summary.Runtime.BootTime
+
+	if j.opts.SkipNoBootTime && bootTime == nil {
 		log.Printf("instance has no boot time, skipping %v", vmName)
 		return nil
 	}
 
-	bootedAgo := time.Now().UTC().Sub(*mvm.Summary.Runtime.BootTime)
-	log.Printf("instance booted_ago=%v %v", bootedAgo, vmName)
+	if bootTime != nil {
+		bootedAgo := time.Now().UTC().Sub(*mvm.Summary.Runtime.BootTime)
+		log.Printf("instance booted_ago=%v %v", bootedAgo, vmName)
+	}
 
-	uptime := time.Duration(mvm.Summary.QuickStats.UptimeSeconds) * time.Second
+	uptime := time.Duration(0) * time.Second
 
-	if uptime < j.opts.Cutoff &&
+	uptime = time.Duration(uptimeSecs) * time.Second
+	if j.opts.SkipZeroUptime && uptime < j.opts.Cutoff &&
 		mvm.Summary.Runtime.PowerState != types.VirtualMachinePowerStatePoweredOff {
 
 		log.Printf("skipping instance %v uptime=%v power_state=%v",

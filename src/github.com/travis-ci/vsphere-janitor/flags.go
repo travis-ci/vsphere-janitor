@@ -23,6 +23,16 @@ var (
 			Usage:  "Do not destroy VMs -- only power down",
 			EnvVar: "VSPHERE_JANITOR_SKIP_DESTROY,SKIP_DESTROY",
 		},
+		cli.BoolTFlag{
+			Name:   "z, skip-zero-uptime",
+			Usage:  "Skip over VMs with zero uptime",
+			EnvVar: "VSPHERE_JANITOR_SKIP_ZERO_UPTIME,SKIP_ZERO_UPTIME",
+		},
+		cli.BoolTFlag{
+			Name:   "B, skip-no-boot-time",
+			Usage:  "Skip over VMs without a boot time",
+			EnvVar: "VSPHERE_JANITOR_SKIP_NO_BOOT_TIME,SKIP_NO_BOOT_TIME",
+		},
 		cli.DurationFlag{
 			Name:   "C, cutoff",
 			Value:  2 * time.Hour,

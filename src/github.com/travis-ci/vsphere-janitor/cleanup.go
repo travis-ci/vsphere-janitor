@@ -22,17 +22,14 @@ func RunCleanup(c *cli.Context) {
 		log.Fatal("missing vsphere vm paths")
 	}
 
-	skipDestroy := c.Bool("skip-destroy")
-	cutoffDuration := c.Duration("cutoff")
-	concurrency := c.Int("concurrency")
-	ratePerSecond := c.Int("rate-per-second")
 	cleanupLoopSleep := c.Duration("cleanup-loop-sleep")
 
 	janitor := NewJanitor(u, &JanitorOpts{
-		Cutoff:        cutoffDuration,
-		SkipDestroy:   skipDestroy,
-		Concurrency:   concurrency,
-		RatePerSecond: ratePerSecond,
+		Cutoff:         c.Duration("cutoff"),
+		SkipDestroy:    c.Bool("skip-destroy"),
+		Concurrency:    c.Int("concurrency"),
+		RatePerSecond:  c.Int("rate-per-second"),
+		SkipZeroUptime: c.BoolT("skip-zero-uptime"),
 	})
 
 	if c.String("librato-email") != "" && c.String("librato-token") != "" && c.String("librato-source") != "" {
