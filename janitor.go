@@ -1,6 +1,7 @@
 package vspherejanitor
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/url"
@@ -13,7 +14,6 @@ import (
 	"github.com/vmware/govmomi/object"
 	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/types"
-	"golang.org/x/net/context"
 )
 
 var (

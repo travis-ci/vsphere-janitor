@@ -39,14 +39,6 @@
 			"branch": "master"
 		},
 		{
-			"importpath": "golang.org/x/net/context",
-			"repository": "https://go.googlesource.com/net",
-			"vcs": "",
-			"revision": "d375fa34084fb5703fbe4ee98e64108f3d2235ca",
-			"branch": "master",
-			"path": "/context"
-		},
-		{
 			"importpath": "gopkg.in/urfave/cli.v1",
 			"repository": "https://gopkg.in/urfave/cli.v1",
 			"vcs": "git",
