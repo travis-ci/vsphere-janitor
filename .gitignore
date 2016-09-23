@@ -1,3 +1,5 @@
-bin/
-pkg/
 *.env
+vendor/**
+!vendor/manifest
+*.coverprofile
+coverage.txt

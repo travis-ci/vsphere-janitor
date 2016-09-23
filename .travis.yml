@@ -1,6 +1,29 @@
 language: go
-go: 1.4.2
+go: 1.7.1
+sudo: false
 install:
-- go get -x github.com/constabulary/gb/...
+- make prereqs
+- make deps
 script:
-- gb build -v
+- make test
+- make copyright
+- git diff --exit-code
+- git diff --cached --exit-code
+- make crossbuild
+
+after_success:
+- bash <(curl -s https://codecov.io/bash)
+
+env:
+  global:
+  - 'TRAVIS_COMMIT_SHORT="${TRAVIS_COMMIT:0:7}"'
+
+addons:
+  artifacts:
+    paths:
+    - "./build/linux/amd64/vsphere-janitor"
+    - "./build/darwin/amd64/vsphere-janitor"
+    target_paths:
+    - travis-ci/vsphere-janitor/$TRAVIS_BRANCH
+    - travis-ci/vsphere-janitor/$TRAVIS_COMMIT
+    - travis-ci/vsphere-janitor/$TRAVIS_COMMIT_SHORT

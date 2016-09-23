@@ -2,29 +2,65 @@
 	"version": 0,
 	"dependencies": [
 		{
-			"importpath": "github.com/vmware/govmomi",
-			"repository": "https://github.com/vmware/govmomi",
-			"revision": "db50806964c43230e0f61a2cb9104c7bed497628",
-			"branch": "master"
-		},
-		{
-			"importpath": "golang.org/x/net/context",
-			"repository": "https://go.googlesource.com/net",
-			"revision": "d375fa34084fb5703fbe4ee98e64108f3d2235ca",
+			"importpath": "github.com/BurntSushi/toml",
+			"repository": "https://github.com/BurntSushi/toml",
+			"vcs": "git",
+			"revision": "99064174e013895bbd9b025c31100bd1d9b590ca",
 			"branch": "master",
-			"path": "/context"
+			"notests": true
 		},
 		{
 			"importpath": "github.com/codegangsta/cli",
 			"repository": "https://github.com/codegangsta/cli",
+			"vcs": "",
 			"revision": "7ad88c27405eca0bb4a04bb45897fb7985bd1217",
 			"branch": "master"
 		},
 		{
 			"importpath": "github.com/rcrowley/go-metrics",
 			"repository": "https://github.com/rcrowley/go-metrics",
+			"vcs": "",
 			"revision": "a5cfc242a56ba7fa70b785f678d6214837bf93b9",
 			"branch": "master"
+		},
+		{
+			"importpath": "github.com/urfave/cli",
+			"repository": "https://github.com/urfave/cli",
+			"vcs": "git",
+			"revision": "d53eb991652b1d438abdd34ce4bfa3ef1539108e",
+			"branch": "master",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/vmware/govmomi",
+			"repository": "https://github.com/vmware/govmomi",
+			"vcs": "",
+			"revision": "db50806964c43230e0f61a2cb9104c7bed497628",
+			"branch": "master"
+		},
+		{
+			"importpath": "golang.org/x/net/context",
+			"repository": "https://go.googlesource.com/net",
+			"vcs": "",
+			"revision": "d375fa34084fb5703fbe4ee98e64108f3d2235ca",
+			"branch": "master",
+			"path": "/context"
+		},
+		{
+			"importpath": "gopkg.in/urfave/cli.v1",
+			"repository": "https://gopkg.in/urfave/cli.v1",
+			"vcs": "git",
+			"revision": "a14d7d367bc02b1f57d88de97926727f2d936387",
+			"branch": "master",
+			"notests": true
+		},
+		{
+			"importpath": "gopkg.in/yaml.v2",
+			"repository": "https://gopkg.in/yaml.v2",
+			"vcs": "git",
+			"revision": "31c299268d302dd0aa9a0dcf765a3d58971ac83f",
+			"branch": "v2",
+			"notests": true
 		}
 	]
 }
