@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/codegangsta/cli"
 	"github.com/travis-ci/vsphere-janitor"
+	"github.com/urfave/cli"
 )
 
 var (
