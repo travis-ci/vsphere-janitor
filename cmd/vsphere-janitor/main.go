@@ -11,6 +11,7 @@ import (
 	metrics "github.com/rcrowley/go-metrics"
 	"github.com/travis-ci/vsphere-janitor"
 	"github.com/travis-ci/vsphere-janitor/log"
+	"github.com/travis-ci/vsphere-janitor/vsphere"
 	"github.com/urfave/cli"
 )
 
@@ -65,7 +66,12 @@ func mainAction(c *cli.Context) error {
 
 	cleanupLoopSleep := c.Duration("cleanup-loop-sleep")
 
-	janitor := vspherejanitor.NewJanitor(u, &vspherejanitor.JanitorOpts{
+	vSphereLister, err := vsphere.NewClient(ctx, u, true)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Fatal("couldn't create vsphere vm lister")
+	}
+
+	janitor := vspherejanitor.NewJanitor(vSphereLister, &vspherejanitor.JanitorOpts{
 		Cutoff:         c.Duration("cutoff"),
 		SkipDestroy:    c.Bool("skip-destroy"),
 		Concurrency:    c.Int("concurrency"),
