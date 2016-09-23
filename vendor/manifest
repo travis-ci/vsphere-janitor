@@ -25,6 +25,14 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/mihasya/go-metrics-librato",
+			"repository": "https://github.com/mihasya/go-metrics-librato",
+			"vcs": "git",
+			"revision": "0ec8d5e8bf04a48fc5c96792bfd016b08afdabad",
+			"branch": "master",
+			"notests": true
+		},
+		{
 			"importpath": "github.com/pkg/errors",
 			"repository": "https://github.com/pkg/errors",
 			"vcs": "git",
