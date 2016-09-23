@@ -95,7 +95,7 @@ func (j *Janitor) Cleanup(path string) error {
 			continue
 		}
 
-		totalVMs = atomic.AddInt64(&totalVMs, int64(1))
+		atomic.AddInt64(&totalVMs, int64(1))
 
 		err := j.handleVM(vm, ctx, wg, sem)
 		if err != nil {
