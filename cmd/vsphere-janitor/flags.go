@@ -1,4 +1,4 @@
-package vspherejanitor
+package main
 
 import (
 	"time"

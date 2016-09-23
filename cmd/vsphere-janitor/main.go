@@ -1,10 +1,16 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"net/url"
 	"os"
+	"time"
 
+	librato "github.com/mihasya/go-metrics-librato"
+	metrics "github.com/rcrowley/go-metrics"
 	"github.com/travis-ci/vsphere-janitor"
+	"github.com/travis-ci/vsphere-janitor/log"
 	"github.com/urfave/cli"
 )
 
@@ -35,8 +41,64 @@ func main() {
 	app.Author = "Travis CI GmbH"
 	app.Email = "contact+vsphere-janitor@travis-ci.org"
 
-	app.Flags = vspherejanitor.Flags
-	app.Action = vspherejanitor.RunCleanup
+	app.Flags = Flags
+	app.Action = mainAction
 
 	app.Run(os.Args)
+}
+
+func mainAction(c *cli.Context) error {
+	ctx := context.Background()
+
+	log.WithContext(ctx).Info("starting vsphere-janitor")
+	defer func() { log.WithContext(ctx).Info("stopping vsphere-janitor") }()
+
+	u, err := url.Parse(c.String("vsphere-url"))
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Fatal("couldn't parse vSphere URL")
+	}
+
+	paths := c.StringSlice("vsphere-vm-paths")
+	if len(paths) == 0 {
+		log.WithContext(ctx).Fatal("missing vsphere vm paths")
+	}
+
+	cleanupLoopSleep := c.Duration("cleanup-loop-sleep")
+
+	janitor := vspherejanitor.NewJanitor(u, &vspherejanitor.JanitorOpts{
+		Cutoff:         c.Duration("cutoff"),
+		SkipDestroy:    c.Bool("skip-destroy"),
+		Concurrency:    c.Int("concurrency"),
+		RatePerSecond:  c.Int("rate-per-second"),
+		SkipZeroUptime: c.BoolT("skip-zero-uptime"),
+	})
+
+	if c.String("librato-email") != "" && c.String("librato-token") != "" && c.String("librato-source") != "" {
+		log.WithContext(ctx).Info("starting librato metrics reporter")
+
+		go librato.Librato(metrics.DefaultRegistry, time.Minute,
+			c.String("librato-email"), c.String("librato-token"), c.String("librato-source"),
+			[]float64{0.95}, time.Millisecond)
+
+		if !c.Bool("silence-metrics") {
+			go metrics.Log(metrics.DefaultRegistry, time.Minute,
+				log.WithContext(ctx).WithField("component", "metrics"))
+		}
+	}
+
+	for {
+		for _, path := range paths {
+			janitor.Cleanup(ctx, path)
+		}
+
+		if c.Bool("once") {
+			log.WithContext(ctx).Info("finishing after one run")
+			break
+		}
+
+		log.WithContext(ctx).WithField("duration", cleanupLoopSleep).Info("sleeping")
+		time.Sleep(cleanupLoopSleep)
+	}
+
+	return nil
 }
