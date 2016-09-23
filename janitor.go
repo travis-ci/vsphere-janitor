@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	vmFolderNotFoundError = fmt.Errorf("VM folder not found")
+	errVMFolderNotFound = fmt.Errorf("VM folder not found")
 )
 
 type Janitor struct {
@@ -70,7 +70,7 @@ func (j *Janitor) Cleanup(path string) error {
 	}
 
 	if folderRef == nil {
-		return vmFolderNotFoundError
+		return errVMFolderNotFound
 	}
 
 	folder, ok := folderRef.(*object.Folder)
