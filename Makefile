@@ -1,5 +1,8 @@
 ROOT_PACKAGE := github.com/travis-ci/vsphere-janitor
 MAIN_PACKAGE := $(ROOT_PACKAGE)/cmd/vsphere-janitor
+TEST_PACKAGES := $(ROOT_PACKAGE) $(ROOT_PACKAGE)/mock
+COVER_PACKAGES := $(ROOT_PACKAGE),$(ROOT_PACKAGE)/cmd/vsphere-janitor,$(ROOT_PACKAGE)/log,$(ROOT_PACKAGE)/mock,$(ROOT_PACKAGE)/vsphere
+COVER_FILES := coverage-mock.txt
 
 VERSION_VAR := main.VersionString
 VERSION_VALUE ?= $(shell git describe --always --dirty --tags 2>/dev/null)
@@ -21,7 +24,7 @@ GOBUILD_LDFLAGS ?= \
     -X '$(COPYRIGHT_VAR)=$(COPYRIGHT_VALUE)'
 
 .PHONY: all
-all: clean test build
+all: clean test coverage.html build
 
 .PHONY: clean
 clean:
@@ -31,11 +34,19 @@ clean:
 
 .PHONY: test
 test:
-	go test -x -v -cover \
-		-coverpkg $(ROOT_PACKAGE) \
-		-coverprofile coverage.txt \
-		-covermode=atomic \
-		$(ROOT_PACKAGE)
+	for package in $(TEST_PACKAGES); do \
+		go test -x -v -cover \
+			-coverpkg $(COVER_PACKAGES) \
+			-coverprofile coverage-$$(basename $${package}).txt \
+			-covermode=atomic \
+			$${package}; \
+	done
+
+coverage.txt: $(COVER_FILES)
+	gocovmerge $^ > $@
+
+coverage.html: coverage.txt
+	go tool cover -html=$^ -o $@
 
 .PHONY: build
 build: deps
@@ -58,6 +69,7 @@ deps: vendor/.deps-fetched
 .PHONY: prereqs
 prereqs:
 	go get -u github.com/FiloSottile/gvt
+	go get -u github.com/wadey/gocovmerge
 
 .PHONY: copyright
 copyright:

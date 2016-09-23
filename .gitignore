@@ -3,3 +3,5 @@ vendor/**
 !vendor/manifest
 *.coverprofile
 coverage.txt
+coverage-*.txt
+coverage.html
