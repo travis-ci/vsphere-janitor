@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/url"
@@ -47,6 +48,8 @@ func main() {
 }
 
 func mainAction(c *cli.Context) error {
+	ctx := context.Background()
+
 	u, err := url.Parse(c.String("vsphere-url"))
 	if err != nil {
 		log.Fatal(err)
@@ -82,7 +85,7 @@ func mainAction(c *cli.Context) error {
 
 	for {
 		for _, path := range paths {
-			janitor.Cleanup(path)
+			janitor.Cleanup(ctx, path)
 		}
 
 		if c.Bool("once") {

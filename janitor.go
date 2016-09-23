@@ -51,10 +51,11 @@ type JanitorOpts struct {
 	SkipNoBootTime bool
 }
 
-func (j *Janitor) Cleanup(path string) error {
+func (j *Janitor) Cleanup(ctx context.Context, path string) error {
 	sem := make(chan struct{}, j.opts.Concurrency)
 	wg := sync.WaitGroup{}
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 	throttle := time.Tick(time.Second / time.Duration(j.opts.RatePerSecond))
 
 	client, err := govmomi.NewClient(ctx, j.u, true)
@@ -97,7 +98,7 @@ func (j *Janitor) Cleanup(path string) error {
 
 		atomic.AddInt64(&totalVMs, int64(1))
 
-		err := j.handleVM(vm, ctx, &wg, sem)
+		err := j.handleVM(ctx, vm, &wg, sem)
 		if err != nil {
 			vmErrors = append(vmErrors, err)
 			log.Printf("Error handling vm: %v", err)
@@ -110,8 +111,8 @@ func (j *Janitor) Cleanup(path string) error {
 	return nil
 }
 
-func (j *Janitor) handleVM(vm *object.VirtualMachine,
-	ctx context.Context, wg *sync.WaitGroup, sem chan (struct{})) (panicErr error) {
+func (j *Janitor) handleVM(ctx context.Context,
+	vm *object.VirtualMachine, wg *sync.WaitGroup, sem chan (struct{})) (panicErr error) {
 
 	mvm := &mo.VirtualMachine{}
 
