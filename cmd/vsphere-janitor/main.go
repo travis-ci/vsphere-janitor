@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/url"
 	"os"
 	"time"
@@ -11,6 +10,7 @@ import (
 	librato "github.com/mihasya/go-metrics-librato"
 	metrics "github.com/rcrowley/go-metrics"
 	"github.com/travis-ci/vsphere-janitor"
+	"github.com/travis-ci/vsphere-janitor/log"
 	"github.com/urfave/cli"
 )
 
@@ -50,14 +50,17 @@ func main() {
 func mainAction(c *cli.Context) error {
 	ctx := context.Background()
 
+	log.WithContext(ctx).Info("starting vsphere-janitor")
+	defer func() { log.WithContext(ctx).Info("stopping vsphere-janitor") }()
+
 	u, err := url.Parse(c.String("vsphere-url"))
 	if err != nil {
-		log.Fatal(err)
+		log.WithContext(ctx).WithError(err).Fatal("couldn't parse vSphere URL")
 	}
 
 	paths := c.StringSlice("vsphere-vm-paths")
 	if len(paths) == 0 {
-		log.Fatal("missing vsphere vm paths")
+		log.WithContext(ctx).Fatal("missing vsphere vm paths")
 	}
 
 	cleanupLoopSleep := c.Duration("cleanup-loop-sleep")
@@ -71,7 +74,7 @@ func mainAction(c *cli.Context) error {
 	})
 
 	if c.String("librato-email") != "" && c.String("librato-token") != "" && c.String("librato-source") != "" {
-		log.Printf("starting librato metrics reporter")
+		log.WithContext(ctx).Info("starting librato metrics reporter")
 
 		go librato.Librato(metrics.DefaultRegistry, time.Minute,
 			c.String("librato-email"), c.String("librato-token"), c.String("librato-source"),
@@ -79,7 +82,7 @@ func mainAction(c *cli.Context) error {
 
 		if !c.Bool("silence-metrics") {
 			go metrics.Log(metrics.DefaultRegistry, time.Minute,
-				log.New(os.Stderr, "metrics: ", log.Lmicroseconds))
+				log.WithContext(ctx).WithField("component", "metrics"))
 		}
 	}
 
@@ -89,11 +92,11 @@ func mainAction(c *cli.Context) error {
 		}
 
 		if c.Bool("once") {
-			log.Printf("finishing after one run")
+			log.WithContext(ctx).Info("finishing after one run")
 			break
 		}
 
-		log.Printf("sleeping %s", cleanupLoopSleep)
+		log.WithContext(ctx).WithField("duration", cleanupLoopSleep).Info("sleeping")
 		time.Sleep(cleanupLoopSleep)
 	}
 

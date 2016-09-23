@@ -3,13 +3,13 @@ package vspherejanitor
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/url"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/rcrowley/go-metrics"
+	"github.com/travis-ci/vsphere-janitor/log"
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/object"
 	"github.com/vmware/govmomi/vim25/mo"
@@ -92,7 +92,7 @@ func (j *Janitor) Cleanup(ctx context.Context, path string) error {
 
 		vm, ok := vmRef.(*object.VirtualMachine)
 		if !ok {
-			log.Printf("Skipping non-vm %T: %v", vmRef, vmRef)
+			log.WithContext(ctx).WithField("ref", vmRef).Infof("skipping non-vm type %T", vmRef)
 			continue
 		}
 
@@ -101,7 +101,7 @@ func (j *Janitor) Cleanup(ctx context.Context, path string) error {
 		err := j.handleVM(ctx, vm, &wg, sem)
 		if err != nil {
 			vmErrors = append(vmErrors, err)
-			log.Printf("Error handling vm: %v", err)
+			log.WithContext(ctx).WithError(err).Error("error handling VM")
 		}
 	}
 
@@ -126,32 +126,34 @@ func (j *Janitor) handleVM(ctx context.Context,
 		vmName = mvm.Config.Name
 	}
 
+	logger := log.WithContext(ctx).WithField("vm", vmName)
+
 	panicErrAddr := &panicErr
 	defer func() {
 		err := recover()
 		if err != nil {
 			(*panicErrAddr) = err.(error)
-			log.Printf("ERROR: recovered from err for %v: %v", vmName, err)
+			logger.WithError(err.(error)).Error("recovered from panic")
 		}
 	}()
 
 	uptimeSecs := mvm.Summary.QuickStats.UptimeSeconds
 
 	if j.opts.SkipZeroUptime && uptimeSecs == 0 && mvm.Summary.Runtime.BootTime == nil {
-		log.Printf("instance has 0 uptime, skipping %v", vmName)
+		logger.Info("instance has 0 uptime, skipping")
 		return nil
 	}
 
 	bootTime := mvm.Summary.Runtime.BootTime
 
 	if j.opts.SkipNoBootTime && bootTime == nil {
-		log.Printf("instance has no boot time, skipping %v", vmName)
+		logger.Info("instance has no boot time, skipping")
 		return nil
 	}
 
 	if bootTime != nil {
 		bootedAgo := time.Now().UTC().Sub(*mvm.Summary.Runtime.BootTime)
-		log.Printf("instance booted_ago=%v %v", bootedAgo, vmName)
+		logger.WithField("booted_ago", bootedAgo).Info("instance booted ago")
 	}
 
 	uptime := time.Duration(0) * time.Second
@@ -160,8 +162,7 @@ func (j *Janitor) handleVM(ctx context.Context,
 	if j.opts.SkipZeroUptime && uptime < j.opts.Cutoff &&
 		mvm.Summary.Runtime.PowerState != types.VirtualMachinePowerStatePoweredOff {
 
-		log.Printf("skipping instance %v uptime=%v power_state=%v",
-			vmName, uptime, mvm.Summary.Runtime.PowerState)
+		logger.WithField("uptime", uptime).WithField("power_state", mvm.Summary.Runtime.PowerState).Info("skipping instance")
 		return nil
 	}
 
@@ -172,25 +173,25 @@ func (j *Janitor) handleVM(ctx context.Context,
 		defer func() {
 			err := recover()
 			if err != nil {
-				log.Printf("ERROR: recovered from err for %v: %v", vmName, err)
+				logger.WithError(err.(error)).Error("recovered from panic")
 			}
 			<-sem
 		}()
 
-		log.Printf("handling poweroff and destroy of instance %v uptime=%v", vmName, uptime)
+		logger.WithField("uptime", uptime).Info("handling poweroff and destroy of instance")
 
 		if mvm.Summary.Runtime.PowerState == types.VirtualMachinePowerStatePoweredOn {
-			log.Printf("powering off instance %v", vmName)
+			logger.Info("powering off instance")
 
 			task, err := vm.PowerOff(ctx)
 			if err != nil {
-				log.Printf("couldn't power off instance %s: %s", vmName, err)
+				logger.WithError(err).Error("couldn't create power off task")
 				return
 			}
 
 			err = task.Wait(ctx)
 			if err != nil {
-				log.Printf("couldn't power off instance %s: %s", vmName, err)
+				logger.WithError(err).Error("couldn't power off instance")
 				return
 			}
 
@@ -198,25 +199,25 @@ func (j *Janitor) handleVM(ctx context.Context,
 		}
 
 		if j.opts.SkipDestroy {
-			log.Printf("skipping destroy step for %s", vmName)
+			logger.Info("skipping destroy step")
 			return
 		}
 
-		log.Printf("destroying instance %v", vmName)
+		logger.Info("destroying instance")
 
 		task, err := vm.Destroy(ctx)
 		if err != nil {
-			log.Printf("couldn't destroy instance %v: %s", vmName, err)
+			logger.WithError(err).Error("couldn't create destroy task")
 			return
 		}
 
 		err = task.Wait(ctx)
 		if err != nil {
-			log.Printf("couldn't destroy instance %v: %s", vmName, err)
+			logger.WithError(err).Error("couldn't destroy instance")
 			return
 		}
 
-		log.Printf("destroyed instance %s", vmName)
+		logger.Info("destroyed instance")
 		metrics.GetOrRegisterMeter("vsphere.janitor.cleanup.vms.destroy", metrics.DefaultRegistry).Mark(1)
 	}()
 	return nil
