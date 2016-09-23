@@ -97,7 +97,7 @@ func (j *Janitor) Cleanup(path string) error {
 
 		atomic.AddInt64(&totalVMs, int64(1))
 
-		err := j.handleVM(vm, ctx, wg, sem)
+		err := j.handleVM(vm, ctx, &wg, sem)
 		if err != nil {
 			vmErrors = append(vmErrors, err)
 			log.Printf("Error handling vm: %v", err)
@@ -111,7 +111,7 @@ func (j *Janitor) Cleanup(path string) error {
 }
 
 func (j *Janitor) handleVM(vm *object.VirtualMachine,
-	ctx context.Context, wg sync.WaitGroup, sem chan (struct{})) (panicErr error) {
+	ctx context.Context, wg *sync.WaitGroup, sem chan (struct{})) (panicErr error) {
 
 	mvm := &mo.VirtualMachine{}
 
