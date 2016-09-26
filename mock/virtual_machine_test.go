@@ -70,22 +70,20 @@ func TestVirtualMachinePowerOff(t *testing.T) {
 		},
 	})
 
-	_, err := lister.PoweredOff("/does-not-exist", "foo")
-	assertError(t, fmt.Sprintf("lister.PoweredOff(%q, %q)", "/does-not-exist", "foo"), err)
+	poweredOff := lister.PoweredOff("/does-not-exist", "foo")
+	assertEqual(t, fmt.Sprintf("lister.PoweredOff(%q, %q)", "/does-not-exist", "foo"), false, poweredOff)
 
 	vms, err := lister.ListVMs(context.TODO(), "/one")
 	assertOk(t, "ListVMs(/one)", err)
 	assertEqual(t, "ListVMs(/one) len(vms)", 1, len(vms))
 
-	poweredOff, err := lister.PoweredOff("/one", vms[0].Name())
-	assertOk(t, fmt.Sprintf("lister.PoweredOff(%q, %q)", "/one", vms[0].Name()), err)
+	poweredOff = lister.PoweredOff("/one", vms[0].Name())
 	assertEqual(t, fmt.Sprintf("lister.PoweredOff(%q, %q)", "/one", vms[0].Name()), false, poweredOff)
 
 	err = vms[0].PowerOff(context.TODO())
 	assertOk(t, "vm.PowerOff()", err)
 
-	poweredOff, err = lister.PoweredOff("/one", vms[0].Name())
-	assertOk(t, fmt.Sprintf("lister.PoweredOff(%q, %q)", "/one", vms[0].Name()), err)
+	poweredOff = lister.PoweredOff("/one", vms[0].Name())
 	assertEqual(t, fmt.Sprintf("lister.PoweredOff(%q, %q)", "/one", vms[0].Name()), true, poweredOff)
 }
 
@@ -102,21 +100,19 @@ func TestVirtualMachineDestroy(t *testing.T) {
 		},
 	})
 
-	_, err := lister.Destroyed("/does-not-exist", "foo")
-	assertError(t, fmt.Sprintf("lister.Destroyed(%q, %q)", "/does-not-exist", "foo"), err)
+	destroyed := lister.Destroyed("/does-not-exist", "foo")
+	assertEqual(t, fmt.Sprintf("lister.Destroyed(%q, %q)", "/does-not-exist", "foo"), false, destroyed)
 
 	vms, err := lister.ListVMs(context.TODO(), "/one")
 	assertOk(t, "ListVMs(/one)", err)
 	assertEqual(t, "ListVMs(/one) len(vms)", 1, len(vms))
 
-	destroyed, err := lister.Destroyed("/one", vms[0].Name())
-	assertOk(t, fmt.Sprintf("lister.Destroyed(%q, %q)", "/one", vms[0].Name()), err)
+	destroyed = lister.Destroyed("/one", vms[0].Name())
 	assertEqual(t, fmt.Sprintf("lister.Destroyed(%q, %q)", "/one", vms[0].Name()), false, destroyed)
 
 	err = vms[0].Destroy(context.TODO())
 	assertOk(t, "vm.Destroy()", err)
 
-	destroyed, err = lister.Destroyed("/one", vms[0].Name())
-	assertOk(t, fmt.Sprintf("lister.Destroyed(%q, %q)", "/one", vms[0].Name()), err)
+	destroyed = lister.Destroyed("/one", vms[0].Name())
 	assertEqual(t, fmt.Sprintf("lister.Destroyed(%q, %q)", "/one", vms[0].Name()), true, destroyed)
 }
