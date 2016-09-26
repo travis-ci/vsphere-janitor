@@ -32,19 +32,19 @@ func NewVMLister(data map[string][]*VMData) *VMLister {
 	}
 }
 
-func (vl *VMLister) PoweredOff(path, searchName string) (bool, error) {
+func (vl *VMLister) PoweredOff(path, searchName string) bool {
 	vmNames, ok := vl.poweredOff[path]
 	if !ok {
-		return false, errors.New("no such path")
+		return false
 	}
 
 	for _, name := range vmNames {
 		if name == searchName {
-			return true, nil
+			return true
 		}
 	}
 
-	return false, nil
+	return false
 }
 
 func (vl *VMLister) powerOff(path, name string) {
@@ -54,19 +54,19 @@ func (vl *VMLister) powerOff(path, name string) {
 	vl.poweredOff[path] = append(vl.poweredOff[path], name)
 }
 
-func (vl *VMLister) Destroyed(path, searchName string) (bool, error) {
+func (vl *VMLister) Destroyed(path, searchName string) bool {
 	vmNames, ok := vl.destroyed[path]
 	if !ok {
-		return false, errors.New("no such path")
+		return false
 	}
 
 	for _, name := range vmNames {
 		if name == searchName {
-			return true, nil
+			return true
 		}
 	}
 
-	return false, nil
+	return false
 }
 
 func (vl *VMLister) destroy(path, name string) {
