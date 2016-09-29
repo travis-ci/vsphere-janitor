@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/Sirupsen/logrus"
 	librato "github.com/mihasya/go-metrics-librato"
 	metrics "github.com/rcrowley/go-metrics"
 	"github.com/travis-ci/vsphere-janitor"
@@ -50,6 +51,8 @@ func main() {
 
 func mainAction(c *cli.Context) error {
 	ctx := context.Background()
+
+	logrus.SetFormatter(&logrus.TextFormatter{DisableColors: true})
 
 	log.WithContext(ctx).Info("starting vsphere-janitor")
 	defer func() { log.WithContext(ctx).Info("stopping vsphere-janitor") }()
