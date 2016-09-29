@@ -107,7 +107,7 @@ func (vm *VirtualMachine) BootTime() *time.Time {
 }
 
 func (vm *VirtualMachine) PoweredOn() bool {
-	return vm.mvm.Summary.Runtime.PowerState != types.VirtualMachinePowerStatePoweredOn
+	return vm.mvm.Summary.Runtime.PowerState == types.VirtualMachinePowerStatePoweredOn
 }
 
 func (vm *VirtualMachine) PowerOff(ctx context.Context) error {
