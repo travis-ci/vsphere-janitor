@@ -97,7 +97,10 @@ func mainAction(c *cli.Context) error {
 
 	for {
 		for _, path := range paths {
-			janitor.Cleanup(ctx, path)
+			err := janitor.Cleanup(ctx, path)
+			if err != nil {
+				log.WithContext(ctx).WithError(err).Error("error cleaning up")
+			}
 		}
 
 		if c.Bool("once") {
