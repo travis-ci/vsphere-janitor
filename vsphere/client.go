@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	vspherejanitor "github.com/travis-ci/vsphere-janitor"
+	"github.com/travis-ci/vsphere-janitor/log"
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/object"
 	"github.com/vmware/govmomi/vim25/mo"
@@ -51,7 +52,8 @@ func (c *Client) ListVMs(ctx context.Context, path string) ([]vspherejanitor.Vir
 
 		err = ovm.Properties(ctx, ovm.Reference(), []string{"config", "summary"}, mvm)
 		if err != nil {
-			return nil, errors.Wrap(err, "couldn't get properties for VM")
+			log.WithContext(ctx).WithError(err).Info("couldn't get properties for VM")
+			continue
 		}
 
 		vm := &VirtualMachine{
