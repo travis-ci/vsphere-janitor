@@ -104,7 +104,7 @@ func (j *Janitor) handleVM(ctx context.Context,
 
 	if bootTime != nil {
 		bootedAgo := time.Now().UTC().Sub(*bootTime)
-		logger.WithField("booted_ago", bootedAgo).Info("instance booted ago")
+		logger.WithField("booted_ago", bootedAgo).Info("time since instance boot")
 	}
 
 	uptime := time.Duration(uptimeSecs) * time.Second
