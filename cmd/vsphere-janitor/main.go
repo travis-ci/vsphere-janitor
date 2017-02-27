@@ -7,6 +7,8 @@ import (
 	"os"
 	"time"
 
+	_ "net/http/pprof"
+
 	"github.com/Sirupsen/logrus"
 	librato "github.com/mihasya/go-metrics-librato"
 	metrics "github.com/rcrowley/go-metrics"
@@ -56,6 +58,13 @@ func mainAction(c *cli.Context) error {
 
 	log.WithContext(ctx).Info("starting vsphere-janitor")
 	defer func() { log.WithContext(ctx).Info("stopping vsphere-janitor") }()
+
+	if c.String("pprof-port") != "" {
+		go func() {
+			log.WithContext(ctx).WithField("port", c.String("pprof-port")).Info("setting up pprof")
+			http.ListenAndServe("localhost:"+c.String("pprof-port"), nil)
+		}()
+	}
 
 	u, err := url.Parse(c.String("vsphere-url"))
 	if err != nil {
