@@ -81,5 +81,10 @@ var (
 			Usage:  "Disable logging metrics to stderr",
 			EnvVar: "VSPHERE_JANITOR_SILENCE_METRICS,SILENCE_METRICS",
 		},
+		cli.StringFlag{
+			Name:   "pprof-port",
+			Usage:  "Port to set up net/http/pprof on",
+			EnvVar: "VSPHERE_JANITOR_PPROF_PORT,PPROF_PORT",
+		},
 	}
 )
