@@ -11,6 +11,7 @@ type VMLister interface {
 
 type VirtualMachine interface {
 	Name() string
+	ID() string
 	Uptime() time.Duration
 	BootTime() *time.Time
 	PoweredOn() bool

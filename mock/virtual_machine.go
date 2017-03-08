@@ -108,6 +108,10 @@ func (vm *VirtualMachine) Name() string {
 	return vm.data.Name
 }
 
+func (vm *VirtualMachine) ID() string {
+	return vm.data.Name
+}
+
 func (vm *VirtualMachine) Uptime() time.Duration {
 	return vm.data.Uptime
 }

@@ -85,11 +85,11 @@ func mainAction(c *cli.Context) error {
 	}
 
 	janitor := vspherejanitor.NewJanitor(vSphereLister, &vspherejanitor.JanitorOpts{
-		Cutoff:         c.Duration("cutoff"),
-		SkipDestroy:    c.Bool("skip-destroy"),
-		Concurrency:    c.Int("concurrency"),
-		RatePerSecond:  c.Int("rate-per-second"),
-		SkipZeroUptime: c.BoolT("skip-zero-uptime"),
+		Cutoff:           c.Duration("cutoff"),
+		ZeroUptimeCutoff: c.Duration("zero-uptime-cutoff"),
+		SkipDestroy:      c.Bool("skip-destroy"),
+		Concurrency:      c.Int("concurrency"),
+		RatePerSecond:    c.Int("rate-per-second"),
 	})
 
 	if c.String("librato-email") != "" && c.String("librato-token") != "" && c.String("librato-source") != "" {
@@ -107,7 +107,7 @@ func mainAction(c *cli.Context) error {
 
 	for {
 		for _, path := range paths {
-			err := janitor.Cleanup(ctx, path)
+			err := janitor.Cleanup(ctx, path, time.Now())
 			if err != nil {
 				log.WithContext(ctx).WithError(err).Error("error cleaning up")
 			}
