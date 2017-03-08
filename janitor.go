@@ -3,7 +3,6 @@ package vspherejanitor
 import (
 	"context"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -59,17 +58,11 @@ func (j *Janitor) Cleanup(ctx context.Context, path string, now time.Time) error
 		return errors.Wrap(err, "couldn't list VMs")
 	}
 
-	vmErrors := []error{}
-	totalVMs := int64(0)
-
 	for _, vm := range vms {
 		<-throttle
 
-		atomic.AddInt64(&totalVMs, int64(1))
-
 		err := j.handleVM(ctx, vm, &wg, sem, now)
 		if err != nil {
-			vmErrors = append(vmErrors, err)
 			log.WithContext(ctx).WithError(err).Error("error handling VM")
 		}
 	}
@@ -78,7 +71,7 @@ func (j *Janitor) Cleanup(ctx context.Context, path string, now time.Time) error
 
 	wg.Wait()
 
-	metrics.GetOrRegisterGauge("vsphere.janitor.cleanup.vms.total", metrics.DefaultRegistry).Update(totalVMs)
+	metrics.GetOrRegisterGauge("vsphere.janitor.cleanup.vms.total", metrics.DefaultRegistry).Update(int64(len(vms)))
 	return nil
 }
 
