@@ -15,6 +15,9 @@ import (
 type Janitor struct {
 	vmLister VMLister
 	opts     *JanitorOpts
+
+	zeroUptimeFirstSeenMutex sync.Mutex
+	zeroUptimeFirstSeen      map[string]time.Time
 }
 
 func NewJanitor(vmLister VMLister, opts *JanitorOpts) *Janitor {
@@ -23,27 +26,27 @@ func NewJanitor(vmLister VMLister, opts *JanitorOpts) *Janitor {
 			Cutoff:         2 * time.Hour,
 			Concurrency:    1,
 			RatePerSecond:  5,
-			SkipZeroUptime: true,
 			SkipNoBootTime: true,
 		}
 	}
 
 	return &Janitor{
-		vmLister: vmLister,
-		opts:     opts,
+		vmLister:            vmLister,
+		opts:                opts,
+		zeroUptimeFirstSeen: make(map[string]time.Time),
 	}
 }
 
 type JanitorOpts struct {
-	Cutoff         time.Duration
-	SkipDestroy    bool
-	Concurrency    int
-	RatePerSecond  int
-	SkipZeroUptime bool
-	SkipNoBootTime bool
+	Cutoff           time.Duration
+	ZeroUptimeCutoff time.Duration
+	SkipDestroy      bool
+	Concurrency      int
+	RatePerSecond    int
+	SkipNoBootTime   bool
 }
 
-func (j *Janitor) Cleanup(ctx context.Context, path string) error {
+func (j *Janitor) Cleanup(ctx context.Context, path string, now time.Time) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -64,12 +67,14 @@ func (j *Janitor) Cleanup(ctx context.Context, path string) error {
 
 		atomic.AddInt64(&totalVMs, int64(1))
 
-		err := j.handleVM(ctx, vm, &wg, sem)
+		err := j.handleVM(ctx, vm, &wg, sem, now)
 		if err != nil {
 			vmErrors = append(vmErrors, err)
 			log.WithContext(ctx).WithError(err).Error("error handling VM")
 		}
 	}
+
+	j.cleanupFirstSeen(vms)
 
 	wg.Wait()
 
@@ -77,8 +82,24 @@ func (j *Janitor) Cleanup(ctx context.Context, path string) error {
 	return nil
 }
 
+func (j *Janitor) cleanupFirstSeen(vms []VirtualMachine) {
+	j.zeroUptimeFirstSeenMutex.Lock()
+	defer j.zeroUptimeFirstSeenMutex.Unlock()
+
+	vmExists := make(map[string]bool, len(vms))
+	for _, vm := range vms {
+		vmExists[vm.ID()] = true
+	}
+
+	for id := range j.zeroUptimeFirstSeen {
+		if !vmExists[id] {
+			delete(j.zeroUptimeFirstSeen, id)
+		}
+	}
+}
+
 func (j *Janitor) handleVM(ctx context.Context,
-	vm VirtualMachine, wg *sync.WaitGroup, sem chan (struct{})) (err error) {
+	vm VirtualMachine, wg *sync.WaitGroup, sem chan (struct{}), now time.Time) (err error) {
 	logger := log.WithContext(ctx).WithField("vm", vm.Name())
 
 	defer func() {
@@ -90,27 +111,41 @@ func (j *Janitor) handleVM(ctx context.Context,
 
 	uptimeSecs := int(vm.Uptime().Seconds())
 
-	if j.opts.SkipZeroUptime && uptimeSecs == 0 && vm.BootTime() == nil {
-		logger.Info("instance has 0 uptime, skipping")
-		return nil
-	}
+	if uptimeSecs == 0 && vm.BootTime() == nil {
+		if vm.ID() == "" {
+			logger.Info("VM doesn't have ID yet, skipping")
+			return nil
+		}
 
-	bootTime := vm.BootTime()
+		firstSeen, ok := j.getZeroUptimeFirstSeen(vm.ID())
+		if !ok || now.Sub(firstSeen) < j.opts.ZeroUptimeCutoff {
+			logger.Info("instance has 0 uptime, skipping for now")
+			if !ok {
+				j.setZeroUptimeFirstSeen(vm.ID(), now)
+			}
+			return nil
+		}
 
-	if j.opts.SkipNoBootTime && bootTime == nil {
-		logger.Info("instance has no boot time, skipping")
-		return nil
-	}
+		j.deleteZeroUptimeFirstSeen(vm.ID())
+		logger.WithField("since_first_seen", time.Since(firstSeen)).Info("instance has had 0 uptime for more than timeout, destroying")
+	} else {
+		bootTime := vm.BootTime()
 
-	if bootTime != nil {
-		bootedAgo := time.Now().UTC().Sub(*bootTime)
-		logger.WithField("booted_ago", bootedAgo).Info("time since instance boot")
-	}
+		if j.opts.SkipNoBootTime && bootTime == nil {
+			logger.Info("instance has no boot time, skipping")
+			return nil
+		}
 
-	uptime := time.Duration(uptimeSecs) * time.Second
-	if j.opts.SkipZeroUptime && uptime < j.opts.Cutoff && vm.PoweredOn() {
-		logger.WithField("uptime", uptime).WithField("powered_on", vm.PoweredOn()).Info("skipping instance")
-		return nil
+		if bootTime != nil {
+			bootedAgo := now.UTC().Sub(*bootTime)
+			logger.WithField("booted_ago", bootedAgo).Info("time since instance boot")
+		}
+
+		uptime := time.Duration(uptimeSecs) * time.Second
+		if uptime < j.opts.Cutoff && vm.PoweredOn() {
+			logger.WithField("uptime", uptime).WithField("powered_on", vm.PoweredOn()).Info("skipping instance")
+			return nil
+		}
 	}
 
 	wg.Add(1)
@@ -163,4 +198,23 @@ func (j *Janitor) powerOffAndDestroy(ctx context.Context, logger logrus.FieldLog
 	metrics.GetOrRegisterMeter("vsphere.janitor.cleanup.vms.destroy", metrics.DefaultRegistry).Mark(1)
 
 	return nil
+}
+
+func (j *Janitor) getZeroUptimeFirstSeen(id string) (time.Time, bool) {
+	j.zeroUptimeFirstSeenMutex.Lock()
+	defer j.zeroUptimeFirstSeenMutex.Unlock()
+	firstSeen, ok := j.zeroUptimeFirstSeen[id]
+	return firstSeen, ok
+}
+
+func (j *Janitor) setZeroUptimeFirstSeen(id string, now time.Time) {
+	j.zeroUptimeFirstSeenMutex.Lock()
+	defer j.zeroUptimeFirstSeenMutex.Unlock()
+	j.zeroUptimeFirstSeen[id] = now
+}
+
+func (j *Janitor) deleteZeroUptimeFirstSeen(id string) {
+	j.zeroUptimeFirstSeenMutex.Lock()
+	defer j.zeroUptimeFirstSeenMutex.Unlock()
+	delete(j.zeroUptimeFirstSeen, id)
 }

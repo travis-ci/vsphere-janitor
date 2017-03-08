@@ -100,6 +100,14 @@ func (vm *VirtualMachine) Name() string {
 	return vm.mvm.Config.Name
 }
 
+func (vm *VirtualMachine) ID() string {
+	if vm.mvm.Config == nil {
+		return ""
+	}
+
+	return vm.mvm.Config.Uuid
+}
+
 func (vm *VirtualMachine) Uptime() time.Duration {
 	return time.Duration(vm.mvm.Summary.QuickStats.UptimeSeconds) * time.Second
 }

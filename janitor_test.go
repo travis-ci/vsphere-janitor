@@ -23,12 +23,12 @@ var janitorTestCases []testCase = []testCase{
 	{
 		now: aTime,
 		config: &vspherejanitor.JanitorOpts{
-			Cutoff:         time.Hour,
-			SkipDestroy:    false,
-			Concurrency:    1,
-			RatePerSecond:  100,
-			SkipZeroUptime: true,
-			SkipNoBootTime: true,
+			Cutoff:           time.Hour,
+			ZeroUptimeCutoff: time.Minute,
+			SkipDestroy:      false,
+			Concurrency:      1,
+			RatePerSecond:    100,
+			SkipNoBootTime:   true,
 		},
 		vms: []*mock.VMData{
 			{
@@ -43,6 +43,12 @@ var janitorTestCases []testCase = []testCase{
 				BootTime:  timePointer(aTime.Add(-30 * time.Minute)),
 				PoweredOn: true,
 			},
+			{
+				Name:      "powered-off",
+				Uptime:    0,
+				BootTime:  nil,
+				PoweredOn: false,
+			},
 		},
 	},
 }
@@ -54,7 +60,7 @@ func TestJanitor(t *testing.T) {
 		})
 
 		janitor := vspherejanitor.NewJanitor(vmLister, c.config)
-		err := janitor.Cleanup(context.TODO(), "/")
+		err := janitor.Cleanup(context.TODO(), "/", c.now)
 		assertOk(t, "janitor.Cleanup(/)", err)
 
 		assertEqual(t, `PoweredOff("/", "old-powered-on")`, true, vmLister.PoweredOff("/", "old-powered-on"))

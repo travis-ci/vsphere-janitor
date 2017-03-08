@@ -39,6 +39,12 @@ var (
 			Usage:  "Max uptime cutoff",
 			EnvVar: "VSPHERE_JANITOR_CUTOFF,CUTOFF",
 		},
+		cli.DurationFlag{
+			Name:   "zero-uptime-cutoff",
+			Value:  5 * time.Minute,
+			Usage:  "Max 'zero uptime' cutoff",
+			EnvVar: "VSPHERE_JANITOR_ZERO_UPTIME_CUTOFF,ZERO_UPTIME_CUTOFF",
+		},
 		cli.IntFlag{
 			Name:   "c, concurrency",
 			Usage:  "Concurrent cleanup goroutine count",
