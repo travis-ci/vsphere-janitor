@@ -51,7 +51,8 @@ func (j *Janitor) Cleanup(ctx context.Context, path string, now time.Time) error
 
 	sem := make(chan struct{}, j.opts.Concurrency)
 	wg := sync.WaitGroup{}
-	throttle := time.Tick(time.Second / time.Duration(j.opts.RatePerSecond))
+	throttle := time.NewTicker(time.Second / time.Duration(j.opts.RatePerSecond))
+	defer throttle.Stop()
 
 	vms, err := j.vmLister.ListVMs(ctx, path)
 	if err != nil {
@@ -59,7 +60,7 @@ func (j *Janitor) Cleanup(ctx context.Context, path string, now time.Time) error
 	}
 
 	for _, vm := range vms {
-		<-throttle
+		<-throttle.C
 
 		err := j.handleVM(ctx, vm, &wg, sem, now)
 		if err != nil {
