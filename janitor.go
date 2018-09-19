@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/honeycombio/libhoney-go"
 	"github.com/pkg/errors"
 	"github.com/rcrowley/go-metrics"
 	"github.com/travis-ci/vsphere-janitor/log"
@@ -95,6 +96,10 @@ func (j *Janitor) cleanupFirstSeen(vms []VirtualMachine) {
 func (j *Janitor) handleVM(ctx context.Context,
 	vm VirtualMachine, wg *sync.WaitGroup, sem chan (struct{}), now time.Time) (err error) {
 	logger := log.WithContext(ctx).WithField("vm", vm.Name())
+	event := libhoney.NewEvent()
+	event.AddField("meta.type", "cleanup")
+	event.AddField("app.vm_id", vm.ID())
+	event.AddField("app.vm_name", vm.Name())
 
 	defer func() {
 		panicErr := recover()
@@ -120,6 +125,7 @@ func (j *Janitor) handleVM(ctx context.Context,
 			return nil
 		}
 
+		event.AddField("app.since_first_seen", time.Since(firstSeen))
 		j.deleteZeroUptimeFirstSeen(vm.ID())
 		logger.WithField("since_first_seen", time.Since(firstSeen)).Info("instance has had 0 uptime for more than timeout, destroying")
 	} else {
@@ -132,10 +138,12 @@ func (j *Janitor) handleVM(ctx context.Context,
 
 		if bootTime != nil {
 			bootedAgo := now.UTC().Sub(*bootTime)
+			event.AddField("app.since_boot", bootedAgo)
 			logger.WithField("booted_ago", bootedAgo).Info("time since instance boot")
 		}
 
 		uptime := time.Duration(uptimeSecs) * time.Second
+		event.AddField("app.uptime", uptime)
 		if uptime < j.opts.Cutoff && vm.PoweredOn() {
 			logger.WithField("uptime", uptime).WithField("powered_on", vm.PoweredOn()).Info("skipping instance")
 			return nil
@@ -147,8 +155,12 @@ func (j *Janitor) handleVM(ctx context.Context,
 		defer wg.Done()
 		err := j.powerOffAndDestroy(ctx, logger, sem, vm)
 		if err != nil {
+			event.AddField("app.err", err.Error())
 			logger.WithError(err).Error("error powering off and destroying instance")
 		}
+
+		// only send events if we actually cleaned up the VM
+		event.Send()
 	}()
 	return nil
 }
