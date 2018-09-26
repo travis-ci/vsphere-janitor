@@ -88,6 +88,16 @@ var (
 			EnvVar: "VSPHERE_JANITOR_SILENCE_METRICS,SILENCE_METRICS",
 		},
 		cli.StringFlag{
+			Name:   "honeycomb-write-key",
+			Usage:  "Honeycomb write key",
+			EnvVar: "VSPHERE_JANITOR_HONEYCOMB_WRITE_KEY,HONEYCOMB_WRITE_KEY",
+		},
+		cli.StringFlag{
+			Name:   "honeycomb-dataset",
+			Usage:  "Honeycomb dataset name for cleanup events",
+			EnvVar: "VSPHERE_JANITOR_HONEYCOMB_DATASET,HONEYCOMB_DATASET",
+		},
+		cli.StringFlag{
 			Name:   "pprof-port",
 			Usage:  "Port to set up net/http/pprof on",
 			EnvVar: "VSPHERE_JANITOR_PPROF_PORT,PPROF_PORT",

@@ -25,6 +25,38 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/facebookgo/clock",
+			"repository": "https://github.com/facebookgo/clock",
+			"vcs": "git",
+			"revision": "600d898af40aa09a7a93ecb9265d87b0504b6f03",
+			"branch": "master",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/facebookgo/limitgroup",
+			"repository": "https://github.com/facebookgo/limitgroup",
+			"vcs": "git",
+			"revision": "6abd8d71ec01451d7f1929eacaa263bbe2935d05",
+			"branch": "master",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/facebookgo/muster",
+			"repository": "https://github.com/facebookgo/muster",
+			"vcs": "git",
+			"revision": "fd3d7953fd52354a74b9f6b3d70d0c9650c4ec2a",
+			"branch": "master",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/honeycombio/libhoney-go",
+			"repository": "https://github.com/honeycombio/libhoney-go",
+			"vcs": "git",
+			"revision": "741c87cf6e228e5c509705847b67a3245bc79b8b",
+			"branch": "master",
+			"notests": true
+		},
+		{
 			"importpath": "github.com/mihasya/go-metrics-librato",
 			"repository": "https://github.com/mihasya/go-metrics-librato",
 			"vcs": "git",
@@ -85,6 +117,14 @@
 			"repository": "https://gopkg.in/airbrake/gobrake.v2",
 			"vcs": "git",
 			"revision": "5d77bd50d083834501349f8be70197b26963674d",
+			"branch": "master",
+			"notests": true
+		},
+		{
+			"importpath": "gopkg.in/alexcesaro/statsd.v2",
+			"repository": "https://gopkg.in/alexcesaro/statsd.v2",
+			"vcs": "git",
+			"revision": "7fea3f0d2fab1ad973e641e51dba45443a311a90",
 			"branch": "master",
 			"notests": true
 		},

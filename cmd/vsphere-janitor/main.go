@@ -6,11 +6,13 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"runtime"
 	"time"
 
 	_ "net/http/pprof"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/honeycombio/libhoney-go"
 	librato "github.com/mihasya/go-metrics-librato"
 	metrics "github.com/rcrowley/go-metrics"
 	"github.com/travis-ci/vsphere-janitor"
@@ -103,6 +105,20 @@ func mainAction(c *cli.Context) error {
 			go metrics.Log(metrics.DefaultRegistry, time.Minute,
 				log.WithContext(ctx).WithField("component", "metrics"))
 		}
+	}
+
+	if c.String("honeycomb-write-key") != "" && c.String("honeycomb-dataset") != "" {
+		log.WithContext(ctx).Info("configuring honeycomb reporting")
+
+		libhoney.Init(libhoney.Config{
+			WriteKey: c.String("honeycomb-write-key"),
+			Dataset:  c.String("honeycomb-dataset"),
+		})
+		defer libhoney.Close()
+
+		libhoney.AddDynamicField("meta.goroutines", func() interface{} { return runtime.NumGoroutine() })
+		libhoney.AddField("app.version", c.App.Version)
+		libhoney.AddField("service_name", c.String("librato-source"))
 	}
 
 	for {
