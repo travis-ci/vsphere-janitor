@@ -100,6 +100,7 @@ func (j *Janitor) handleVM(ctx context.Context,
 	event.AddField("meta.type", "cleanup")
 	event.AddField("app.vm_id", vm.ID())
 	event.AddField("app.vm_name", vm.Name())
+	event.AddField("app.powered_on", vm.PoweredOn())
 
 	defer func() {
 		panicErr := recover()
@@ -138,12 +139,12 @@ func (j *Janitor) handleVM(ctx context.Context,
 
 		if bootTime != nil {
 			bootedAgo := now.UTC().Sub(*bootTime)
-			event.AddField("app.since_boot", bootedAgo)
+			event.AddField("app.since_boot", bootedAgo/time.Second)
 			logger.WithField("booted_ago", bootedAgo).Info("time since instance boot")
 		}
 
 		uptime := time.Duration(uptimeSecs) * time.Second
-		event.AddField("app.uptime", uptime)
+		event.AddField("app.uptime", uptimeSecs)
 		if uptime < j.opts.Cutoff && vm.PoweredOn() {
 			logger.WithField("uptime", uptime).WithField("powered_on", vm.PoweredOn()).Info("skipping instance")
 			return nil
