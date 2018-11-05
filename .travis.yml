@@ -1,6 +1,6 @@
 language: go
-go: 1.8
-sudo: false
+go: 1.11.x
+
 install:
 - make prereqs
 - make deps
@@ -10,6 +10,7 @@ script:
 - git diff --exit-code
 - git diff --cached --exit-code
 - make crossbuild
+- make docker-build
 
 after_success:
 - bash <(curl -s https://codecov.io/bash)
@@ -17,6 +18,16 @@ after_success:
 env:
   global:
   - 'TRAVIS_COMMIT_SHORT="${TRAVIS_COMMIT:0:7}"'
+
+deploy:
+  provider: script
+  script: bin/docker-push
+  # we don't need this for docker, but the artifacts push does
+  skip_cleanup: true
+  on:
+    # push all non-PR builds to Docker Hub
+    all_branches: true
+    condition: "$TRAVIS_PULL_REQUEST == false"
 
 addons:
   artifacts:
