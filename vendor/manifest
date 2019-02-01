@@ -80,6 +80,23 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/sony/gobreaker",
+			"repository": "https://github.com/sony/gobreaker",
+			"vcs": "git",
+			"revision": "d928aaea92e15a2c8ab59efdfbb362844d8524e1",
+			"branch": "master",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/travis-ci/jupiter-brain/pkg/vsphereutil",
+			"repository": "https://github.com/travis-ci/jupiter-brain",
+			"vcs": "git",
+			"revision": "73d234aa1c6c6f868e70a25d4826d9b46f2016d9",
+			"branch": "master",
+			"path": "/pkg/vsphereutil",
+			"notests": true
+		},
+		{
 			"importpath": "github.com/urfave/cli",
 			"repository": "https://github.com/urfave/cli",
 			"vcs": "git",
@@ -90,8 +107,8 @@
 		{
 			"importpath": "github.com/vmware/govmomi",
 			"repository": "https://github.com/vmware/govmomi",
-			"vcs": "",
-			"revision": "db50806964c43230e0f61a2cb9104c7bed497628",
+			"vcs": "git",
+			"revision": "e560c7bb1e709826a897c9da4baad0944c2cdda0",
 			"branch": "master"
 		},
 		{

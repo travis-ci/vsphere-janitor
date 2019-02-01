@@ -6,26 +6,21 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/travis-ci/jupiter-brain/pkg/vsphereutil"
 	vspherejanitor "github.com/travis-ci/vsphere-janitor"
 	"github.com/travis-ci/vsphere-janitor/log"
-	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/object"
 	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/types"
 )
 
 type Client struct {
-	client *govmomi.Client
+	clientProvider vsphereutil.ClientProvider
 }
 
 func NewClient(ctx context.Context, u *url.URL, insecure bool) (*Client, error) {
-	vClient, err := govmomi.NewClient(ctx, u, insecure)
-	if err != nil {
-		return nil, errors.Wrap(err, "couldn't create govmomi client")
-	}
-
 	return &Client{
-		client: vClient,
+		clientProvider: vsphereutil.NewClientProvider(u, insecure),
 	}, nil
 }
 
@@ -68,7 +63,12 @@ func (c *Client) ListVMs(ctx context.Context, path string) ([]vspherejanitor.Vir
 }
 
 func (c *Client) folder(ctx context.Context, path string) (*object.Folder, error) {
-	searchIndex := object.NewSearchIndex(c.client.Client)
+	client, err := c.clientProvider.Get(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "couldn't get govmomi client")
+	}
+
+	searchIndex := object.NewSearchIndex(client.Client)
 
 	folderRef, err := searchIndex.FindByInventoryPath(ctx, path)
 	if err != nil {
