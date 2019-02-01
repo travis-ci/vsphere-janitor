@@ -9,7 +9,6 @@ import (
 	"github.com/travis-ci/jupiter-brain/pkg/vsphereutil"
 	vspherejanitor "github.com/travis-ci/vsphere-janitor"
 	"github.com/travis-ci/vsphere-janitor/log"
-	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/object"
 	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/types"
